@@ -57,7 +57,8 @@ the spec repository instead, then re-run the sync.
 Re-sync with:
 
 \`\`\`bash
-tools/vendor.sh $DEST $REF
+git clone --depth 1 $SPEC_REPO /tmp/dependably-spec
+/tmp/dependably-spec/tools/vendor.sh $DEST $REF
 \`\`\`
 
 A newer upstream commit is not automatically a problem: this copy pins the contract version
