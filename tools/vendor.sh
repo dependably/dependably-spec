@@ -1,0 +1,68 @@
+#!/bin/bash
+# Vendor the conformance corpus into a consuming tool repository.
+#
+# Copies conformance/dependably/ from a pinned commit of this repository and writes a
+# VENDOR.md beside it recording exactly what was copied. The recorded commit is the point:
+# a tool sitting on an older corpus is not broken, it is testing an older contract — but
+# only if you can tell, which is what the drift between copies cost before.
+#
+# Usage, from the consuming repository's root:
+#   tools/vendor.sh <destination-dir> [ref]
+#
+#   tools/vendor.sh tests/Dependably.PdbCheck.Tests/conformance
+#   tools/vendor.sh tests/conformance v1.2.0
+
+set -euo pipefail
+
+SPEC_REPO="${DEPENDABLY_SPEC_REPO:-https://gitlab.northwardlabs.ca/moonlitlabs/dependably-spec.git}"
+DEST="${1:-}"
+REF="${2:-main}"
+
+if [ -z "$DEST" ]; then
+  echo "usage: vendor.sh <destination-dir> [ref]" >&2
+  exit 2
+fi
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+echo "Fetching $SPEC_REPO @ $REF ..."
+git clone --quiet --depth 1 --branch "$REF" "$SPEC_REPO" "$WORK/spec" 2>/dev/null \
+  || git clone --quiet "$SPEC_REPO" "$WORK/spec"
+git -C "$WORK/spec" checkout --quiet "$REF"
+
+SHA="$(git -C "$WORK/spec" rev-parse HEAD)"
+DATE="$(git -C "$WORK/spec" log -1 --format=%cI)"
+
+mkdir -p "$DEST"
+# Replace rather than merge: a case deleted upstream must disappear here too, or the copy
+# quietly keeps testing a contract that no longer exists.
+rm -rf "${DEST:?}/dependably"
+cp -R "$WORK/spec/conformance/dependably" "$DEST/dependably"
+
+cat > "$DEST/VENDOR.md" <<EOF
+# Vendored conformance corpus
+
+Copied from the Dependably spec repository. Do not edit these files here — a change made in
+this copy is invisible to every other tool and will be overwritten by the next sync. Change
+the spec repository instead, then re-run the sync.
+
+| | |
+|---|---|
+| Source | $SPEC_REPO |
+| Ref | \`$REF\` |
+| Commit | \`$SHA\` |
+| Committed | $DATE |
+
+Re-sync with:
+
+\`\`\`bash
+tools/vendor.sh $DEST $REF
+\`\`\`
+
+A newer upstream commit is not automatically a problem: this copy pins the contract version
+this tool is tested against. Update deliberately, and re-run the tool's test suite.
+EOF
+
+echo "Vendored $(find "$DEST/dependably/cases" -name '*.json' | wc -l | tr -d ' ') cases into $DEST/dependably"
+echo "Recorded $SHA in $DEST/VENDOR.md"

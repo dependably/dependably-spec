@@ -1,0 +1,6 @@
+# Local agent tooling state
+.claude/
+
+# Misc
+.DS_Store
+*.log
