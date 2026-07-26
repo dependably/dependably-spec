@@ -40,6 +40,16 @@ mkdir -p "$DEST"
 rm -rf "${DEST:?}/dependably"
 cp -R "$WORK/spec/conformance/dependably" "$DEST/dependably"
 
+# Record a checksum for every vendored file. Verification then needs no network access and
+# no credentials, which matters because the consuming repositories run CI on two different
+# forges and one of them cannot reach this one at all. It also makes the check fast enough to
+# run on every pipeline rather than being something people skip.
+(
+  cd "$DEST/dependably" && find . -type f | LC_ALL=C sort | while IFS= read -r f; do
+    printf '%s  %s\n' "$(shasum -a 256 "$f" 2>/dev/null | cut -d' ' -f1 || sha256sum "$f" | cut -d' ' -f1)" "${f#./}"
+  done
+) > "$DEST/corpus.sha256"
+
 cat > "$DEST/VENDOR.md" <<EOF
 # Vendored conformance corpus
 
@@ -60,6 +70,10 @@ Re-sync with:
 git clone --depth 1 $SPEC_REPO /tmp/dependably-spec
 /tmp/dependably-spec/tools/vendor.sh $DEST $REF
 \`\`\`
+
+\`corpus.sha256\` beside this file records a checksum for every vendored file, written at
+copy time. CI verifies the copy against it without needing to reach this repository, so drift
+is caught on every pipeline rather than only when someone thinks to look.
 
 A newer upstream commit is not automatically a problem: this copy pins the contract version
 this tool is tested against. Update deliberately, and re-run the tool's test suite.
