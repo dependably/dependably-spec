@@ -212,3 +212,63 @@ assert on them uniformly. Warnings never affect exit codes.
 | `UNKNOWN_KEY` | an unknown key appears in the tool's own section (§8) |
 | `UNUSED_EXCEPTION` | an exception matched no finding in the run (§6.4) |
 | `EXPIRED_EXCEPTION` | an exception's `expires` date has passed (§6.5) |
+
+## 12. Conformance vocabulary binding
+
+The conformance corpus is replayed by every tool. Almost everything it pins — discovery,
+section precedence, merge, validation outcomes — is identical across tools; the only things
+that differ are the section key a tool reads, the alias key it accepts, and the rule ids its
+registry publishes. A case that spells those out in one tool's words can only be replayed by
+that tool. Such cases are therefore written against a **symbolic vocabulary** that the
+replaying adapter binds to its own names before the case runs.
+
+12.1. A case whose `tool` field is the literal string `$any` is **vocabulary-bound**: every
+tool-specific name in it is a placeholder, and an adapter **MUST** replay it as its own tool
+after binding. A case whose `tool` field names a tool registered in §3.3 is
+**tool-specific**: it carries literal vocabulary, it **MUST NOT** contain placeholders, and
+an adapter for a different tool replays its grammar only (§6.7 applicability still belongs in
+that tool's own tests).
+
+12.2. Placeholders occur as **whole strings only** — an entire object key or an entire string
+value, never a fragment of a longer string. Binding is exact whole-string replacement applied
+to the `files`, `cli`, `findings` and `expect` subtrees of a case. Substring substitution is
+forbidden because it makes `$rule1` and a hypothetical `$rule10` ambiguous and because a
+binding that needs to carry structure (a version-pinned package name, say) can carry the whole
+string instead.
+
+| Placeholder | Binds to |
+|-------------|----------|
+| `$tool` | the replaying tool's canonical section key (§3.3) |
+| `$alias` | the replaying tool's deprecated alias section key (§3.3) |
+| `$rule1` | a rule id from the replaying tool's own registry (§4.4) |
+| `$rule2` | a second rule id from that registry, distinct from `$rule1` |
+| `$foreignRule` | a rule id that is in some other tool's registry and not in the replaying tool's |
+| `$unknownRule` | a rule id that is in no tool's registry |
+| `$foreignKey` | a key another tool defines inside its own section (§7.1) and the replaying tool does not |
+
+12.3. `$schema` (§3.2) is a configuration key, not a placeholder. It is never bound.
+
+12.4. A deliberate misspelling of a key in the universal vocabulary of §4 (`exclde` for
+`exclude`) is unknown to every tool by construction and needs no binding.
+
+12.5. Not every behavior exists in every tool. A vocabulary-bound case **MAY** carry a
+`requires` array of capability tokens; an adapter whose tool lacks a listed capability
+**MUST** skip the case and **MUST** report the skip, naming the case and the unmet
+capability. Silently passing a skipped case is the failure this field exists to prevent.
+
+| Capability | The replaying tool has |
+|------------|------------------------|
+| `alias` | a deprecated alias section key in the §3.3 registry |
+| `packageSelector` | findings that carry a `package` (§6.7) |
+| `pathSelector` | findings that carry a `path` |
+| `symbolSelector` | findings that carry a `symbol` |
+| `idSelector` | findings that carry an `id` |
+
+12.6. A case **MAY** instead carry `appliesTo`, an array of §3.3 tool names, when it is
+genuinely about named tools rather than about a capability. `requires` is preferred:
+a capability list stays correct when a tool is added to the suite, a name list does not.
+
+12.7. An adapter that encounters a placeholder it cannot bind **MUST** fail the run rather
+than replay the case with the placeholder left in place. An unbound `$tool` becomes an
+unknown top-level section, which §3.5 requires be ignored silently — the case would then
+pass while asserting nothing.
