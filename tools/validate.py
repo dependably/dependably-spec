@@ -131,6 +131,16 @@ def main() -> int:
         if not expect:
             fail(f"{path.name}: expect is empty, so the case asserts nothing")
 
+    # Everything under conformance/ is copied verbatim into six other repositories, at paths
+    # that share no ancestry with this one. A relative link survives the copy as a dead link, so
+    # vendored files must address this repository absolutely.
+    for path in sorted((ROOT / "conformance").rglob("*.md")):
+        for target in re.findall(r"\]\((\.{0,2}/[^)#]+)\)", path.read_text()):
+            fail(
+                f"{path.relative_to(ROOT)}: relative link '{target}' will not resolve once "
+                "vendored; use the repository URL"
+            )
+
     if problems:
         print(f"{len(problems)} problem(s):\n", file=sys.stderr)
         for problem in problems:

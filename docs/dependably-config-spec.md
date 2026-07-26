@@ -2,7 +2,7 @@
 
 **Status:** Normative draft (v1)
 **Applies to:** `npm-check`, `nucheck`, `pycheck`, `cslint`, `codemetrics`
-**Companion documents:** [`dependably-config-unification-plan.md`](./dependably-config-unification-plan.md) (rationale + rollout), [`../conformance/dependably/`](../conformance/dependably/) (cross-language fixtures), [`../schema/dependably-v1.json`](../schema/dependably-v1.json) (JSON Schema).
+**Companion documents:** [`finding-schema.md`](./finding-schema.md) (the JSON output envelope), [`config-unification-plan.md`](./config-unification-plan.md) (design rationale; historical), [`../conformance/dependably/`](../conformance/dependably/) (cross-language fixtures), [`../schema/dependably-v1.json`](../schema/dependably-v1.json) (JSON Schema).
 
 The key words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are used per RFC 2119.
 
