@@ -12,6 +12,25 @@ validated before the expiry format is, so replaying a `package`-selector case un
 that does not emit `package` raises a selector error and fails a case that is actually
 passing. Applicability is per-tool and belongs in each tool's own tests.
 
+## What is actually executed
+
+Not all of it. Every adapter in the suite currently collects two filename prefixes,
+`exceptions-` and `validation-exception-`, which is 12 of the 29 cases. The other 17 — the
+`discovery-`, `sections-`, `merge-` families and the non-exception `validation-` ones — are
+replayed by nothing, and npm-check has no adapter at all.
+
+This is worth knowing before trusting the corpus. Those 17 cases document the contract; they do
+not enforce it. The suite learned this the hard way: every tool drifted into warning about
+unknown keys in `common`, and `validation-unknown-key-warns` and
+`validation-unknown-rule-in-common-ignored` sat in this directory the whole time without being
+run by anything. A case added here does not become a test until an adapter collects its prefix.
+
+Two ways to close it, both real work rather than a rename: widen the adapters to replay the
+config-loader groups, or accept that those groups are documentation and pin their behaviour in
+each tool's own tests. The tools that fixed the `common` rule took the second route, and their
+unit tests do hold it — but that is per-tool coverage of a cross-tool contract, which is what
+this corpus exists to avoid.
+
 ## Layout
 
 - `cases/*.json` — one case per file.
