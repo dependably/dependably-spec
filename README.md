@@ -44,13 +44,19 @@ tests/<project>/conformance/VENDOR.md     ← upstream URL + commit SHA + sync c
 The corpus is data, not code, so a tool at an older commit is not broken — it is testing an
 older contract. `VENDOR.md` is what makes the difference visible rather than silent.
 
-### Replaying a case authored for another tool
+### Replaying a case as your own tool
 
-Each case names the tool whose vocabulary it uses in its `tool` field. An adapter replays the
-**grammar**, not that tool's selector applicability. Selectors are validated before the expiry
-format is, so replaying a `package`-selector case under a tool that emits no `package` raises a
-selector error and fails a case that is actually passing. Applicability is per-tool and belongs
-in each tool's own tests.
+Most cases carry `"tool": "$any"`. Their section key, alias key and rule ids are placeholders,
+and an adapter binds them to its own names before the case runs — so the case exercises the
+adapter's tool rather than the tool it happened to be written next to. Spec §12 is the
+normative contract; `conformance/dependably/README.md` is the adapter's copy of it.
+
+The remaining cases name a tool in their `tool` field and carry literal vocabulary, with the
+reason in the corpus README. An adapter for a different tool replays their **grammar**, not
+that tool's selector applicability: selectors are validated before the expiry format is, so
+replaying a `package`-selector case under a tool that emits no `package` raises a selector
+error and fails a case that is actually passing. Applicability is per-tool and belongs in each
+tool's own tests.
 
 ## Adding a tool
 
@@ -59,7 +65,8 @@ in each tool's own tests.
    predate this format.
 2. Add the section to `schema/dependably-v1.json`.
 3. Publish the tool's rule-id registry in its README and export it as a constant.
-4. Vendor the corpus and wire up an adapter.
+4. Vendor the corpus and wire up an adapter, including the §12 binding map. A new tool binds
+   no `$alias` and skips the cases that require one.
 
 ## Changing the contract
 
