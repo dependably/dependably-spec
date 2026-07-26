@@ -59,13 +59,24 @@ as a whole rather than about any one finding. No other top-level key is permitte
 2.3. `findings` **MUST** equal the length of the top-level `findings` array, suppressed entries
 included.
 
-2.4. `bySeverity` **MUST** carry all five ladder keys, including zeroes. A tool whose internal
-model has fewer levels **MUST** map onto the ladder rather than hardcoding the unused keys to
-zero: a permanently-zero `critical` is indistinguishable from a genuinely clean run.
+2.4. `bySeverity` **MUST** carry all five ladder keys, including zeroes, and each count **MUST**
+be derived from the findings actually emitted. A tool **MUST NOT** hardcode a key to zero: a
+hardcoded count is a second, independent statement of the mapping its findings already use, and
+the two drift.
 
-2.5. `exitCode` **MUST** equal the process's real exit code.
+2.5. A tool whose internal model has fewer levels will legitimately report zero for a level it
+cannot produce. It **MUST** document its producible range in its README. Promoting findings to
+fill an unused level is worse than the zero — it trades a misleading count for a misleading
+severity.
 
-2.6. Consequently a tool **MUST** compute the gate before rendering, and pass the result to the
+2.6. This leaves a consumer unable to distinguish "found no critical findings" from "does not
+look for critical findings". The envelope has no way to express the difference and gaining one
+would be a breaking change, so it is recorded here as a known limitation for a future revision
+rather than papered over.
+
+2.7. `exitCode` **MUST** equal the process's real exit code.
+
+2.8. Consequently a tool **MUST** compute the gate before rendering, and pass the result to the
 formatter rather than re-deriving it. A display filter can narrow what is printed without
 changing what failed, so a re-derived value will disagree with reality precisely when it
 matters most.
@@ -171,7 +182,7 @@ Defects against this document, recorded so they are fixed rather than copied:
 | Tool | Divergence |
 |------|-----------|
 | nucheck | Drops suppressed findings entirely instead of emitting them with `suppressed`/`suppressedBy` (§6.1). Rejects the `error`/`warning`/`warn` gate aliases (§4.4). |
-| cslint | Hardcodes `bySeverity.critical` and `bySeverity.moderate` to `0` rather than mapping its internal levels onto the ladder (§2.4). Omits `extra` on findings. |
+| cslint | Omits `extra` on findings. Its `bySeverity` is now a histogram of emitted findings (§2.4), but `critical` and `moderate` stay zero because its three internal levels map to `high`/`low`/`info` — permitted by §2.5, and an instance of the limitation in §2.6. |
 | codemetrics | Omits `extra` on findings; uses envelope-level `extra` for its metrics tree, which is permitted by §1.6. Cannot satisfy §6 at all: its exceptions apply to per-metric threshold violations while its `findings` array holds interpreted diagnoses, so the suppressible unit and the reported unit are different objects. `suppressed` is emitted as a constant `false`. Closing this needs either metric violations emitted as findings or an exception-aware severity gate. |
 
 ## 9. Versioning
