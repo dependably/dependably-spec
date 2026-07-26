@@ -85,17 +85,20 @@ done < "$MANIFEST"
 
 # And nothing may be present that the manifest does not name, or a file could be added here
 # and silently diverge from every other copy.
-( cd "$CORPUS" && find . -type f | sed 's|^\./||' | LC_ALL=C sort ) > /tmp/.corpus-actual.$$
-cut -d' ' -f3- "$MANIFEST" | sed 's/^ *//' | LC_ALL=C sort > /tmp/.corpus-expected.$$
+# mktemp rather than a predictable /tmp path, and a trap rather than a cleanup line at the
+# end: under `set -e` an early exit would skip the cleanup and leave the files behind.
+SCRATCH="$(mktemp -d)"
+trap 'rm -rf "$SCRATCH"' EXIT HUP INT TERM
+
+( cd "$CORPUS" && find . -type f | sed 's|^\./||' | LC_ALL=C sort ) > "$SCRATCH/actual"
+cut -d' ' -f3- "$MANIFEST" | sed 's/^ *//' | LC_ALL=C sort > "$SCRATCH/expected"
 
 while IFS= read -r path; do
-    if ! grep -Fxq "$path" /tmp/.corpus-expected.$$; then
+    if ! grep -Fxq "$path" "$SCRATCH/expected"; then
         echo "  UNTRACKED $path" >&2
         FAILED=1
     fi
-done < /tmp/.corpus-actual.$$
-
-rm -f /tmp/.corpus-actual.$$ /tmp/.corpus-expected.$$
+done < "$SCRATCH/actual"
 
 if [ "$FAILED" -ne 0 ]; then
     echo >&2
