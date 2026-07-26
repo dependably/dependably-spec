@@ -172,7 +172,7 @@ Defects against this document, recorded so they are fixed rather than copied:
 |------|-----------|
 | nucheck | Drops suppressed findings entirely instead of emitting them with `suppressed`/`suppressedBy` (§6.1). Rejects the `error`/`warning`/`warn` gate aliases (§4.4). |
 | cslint | Hardcodes `bySeverity.critical` and `bySeverity.moderate` to `0` rather than mapping its internal levels onto the ladder (§2.4). Omits `extra` on findings. |
-| codemetrics | Omits `extra` on findings; uses envelope-level `extra` for its metrics tree, which is permitted by §1.6. |
+| codemetrics | Omits `extra` on findings; uses envelope-level `extra` for its metrics tree, which is permitted by §1.6. Cannot satisfy §6 at all: its exceptions apply to per-metric threshold violations while its `findings` array holds interpreted diagnoses, so the suppressible unit and the reported unit are different objects. `suppressed` is emitted as a constant `false`. Closing this needs either metric violations emitted as findings or an exception-aware severity gate. |
 
 ## 9. Versioning
 
